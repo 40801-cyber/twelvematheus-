@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matheus Oliveira de Carvalho | Portfólio 3D Interativo</title>
+
+  <!-- Meta tags SEO -->
+  <meta name="description"
+    content="Portfólio 3D interativo de Matheus Oliveira de Carvalho - Desenvolvedor Web e estudante do 2º B TI. Experiências imersivas com Three.js e CSS 3D.">
+  <meta name="author" content="Matheus Oliveira de Carvalho">
+
+  <!-- Google Fonts: Space Grotesk & Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Bibliotecas 3D e Animação via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. VARIÁVEIS DE TEMA & ESTILOS GLOBAIS
+       (Personalize aqui as cores primárias, secundárias e luzes)
+       ========================================================================== */
+    :root {
+      /* Tema Neon (Padrão) */
+      --color-bg: #070b19;
+      --color-bg-card: rgba(14, 21, 46, 0.65);
+      --color-bg-card-hover: rgba(22, 33, 73, 0.85);
+      --color-border: rgba(39, 225, 193, 0.25);
+      --color-border-glow: rgba(39, 225, 193, 0.6);
+
+      --neon-pink: #FF3D81;
+      --neon-yellow: #FFB400;
+      --neon-turquoise: #27E1C1;
+      --neon-purple: #6C5CE7;
+      --neon-blue: #00B4FF;
+      --neon-green: #8AFF4D;
+
+      --primary: var(--neon-turquoise);
+      --secondary: var(--neon-pink);
+      --accent: var(--neon-yellow);
+      --text-main: #FFFFFF;
+      --text-muted: #A3B8CC;
+
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Poppins', sans-serif;
+
+      --blur-strength: 16px;
+      --transition-smooth: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Tema Pôr do Sol (Sunset) */
+    body.theme-sunset {
+      --color-bg: #14091a;
+      --color-bg-card: rgba(35, 15, 45, 0.65);
+      --color-bg-card-hover: rgba(55, 23, 70, 0.85);
+      --color-border: rgba(255, 94, 54, 0.3);
+      --color-border-glow: rgba(255, 42, 133, 0.7);
+      --primary: #FF5E36;
+      --secondary: #FF2A85;
+      --accent: #FFAE33;
+      --neon-blue: #9b51e0;
+      --neon-turquoise: #FF7675;
+    }
+
+    /* Tema Oceano (Ocean) */
+    body.theme-ocean {
+      --color-bg: #031326;
+      --color-bg-card: rgba(6, 28, 56, 0.65);
+      --color-bg-card-hover: rgba(10, 44, 88, 0.85);
+      --color-border: rgba(0, 242, 254, 0.3);
+      --color-border-glow: rgba(79, 172, 254, 0.7);
+      --primary: #00F2FE;
+      --secondary: #4FACFE;
+      --accent: #38EF7D;
+      --neon-blue: #0072FF;
+      --neon-turquoise: #00e5ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--color-bg);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--color-bg);
+      position: relative;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ==========================================================================
+       2. TELA DE CARREGAMENTO (LOADING SCREEN 3D)
+       ========================================================================== */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #050814;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease, visibility 0.8s;
+    }
+
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-cube-wrap {
+      width: 80px;
+      height: 80px;
+      perspective: 400px;
+      margin-bottom: 30px;
+    }
+
+    .loader-cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      animation: rotateCube 3s infinite linear;
+    }
+
+    .loader-face {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 2px solid var(--neon-turquoise);
+      background: rgba(39, 225, 193, 0.08);
+      box-shadow: 0 0 15px rgba(39, 225, 193, 0.4) inset;
+    }
+
+    .loader-face:nth-child(1) {
+      transform: translateZ(40px);
+      border-color: var(--neon-pink);
+    }
+
+    .loader-face:nth-child(2) {
+      transform: rotateY(180deg) translateZ(40px);
+      border-color: var(--neon-yellow);
+    }
+
+    .loader-face:nth-child(3) {
+      transform: rotateY(90deg) translateZ(40px);
+      border-color: var(--neon-turquoise);
+    }
+
+    .loader-face:nth-child(4) {
+      transform: rotateY(-90deg) translateZ(40px);
+      border-color: var(--neon-purple);
+    }
+
+    .loader-face:nth-child(5) {
+      transform: rotateX(90deg) translateZ(40px);
+      border-color: var(--neon-blue);
+    }
+
+    .loader-face:nth-child(6) {
+      transform: rotateX(-90deg) translateZ(40px);
+      border-color: var(--neon-green);
+    }
+
+    @keyframes rotateCube {
+      0% {
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+      }
+
+      100% {
+        transform: rotateX(360deg) rotateY(720deg) rotateZ(360deg);
+      }
+    }
+
+    .loader-title {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      color: #fff;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      text-shadow: 0 0 10px var(--neon-turquoise);
+    }
+
+    .loader-bar-bg {
+      width: 260px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .loader-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-turquoise), var(--neon-yellow));
+      border-radius: 99px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px var(--neon-turquoise);
+    }
+
+    .loader-percent {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-family: var(--font-heading);
+    }
+
+    /* ==========================================================================
+       3. CANVAS 3D DE FUNDO (THREE.JS)
+       ========================================================================== */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: auto;
+      outline: none;
+    }
+
+    /* Fallback animado em CSS se WebGL não for suportado */
+    .no-webgl-fallback {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, #152243 0%, #070b19 100%);
+      z-index: 0;
+      display: none;
+    }
+
+    /* ==========================================================================
+       4. CURSOR PERSONALIZADO COM BRILHO NEON
+       ========================================================================== */
+    .custom-cursor-dot,
+    .custom-cursor-ring {
+      position: fixed;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+
+    .custom-cursor-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary), 0 0 24px var(--primary);
+    }
+
+    .custom-cursor-ring {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--secondary);
+      box-shadow: 0 0 15px rgba(255, 61, 129, 0.4);
+      transition: width 0.2s, height 0.2s, border-color 0.2s;
+    }
+
+    .cursor-hover .custom-cursor-ring {
+      width: 58px;
+      height: 58px;
+      border-color: var(--accent);
+      background: rgba(255, 180, 0, 0.1);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+
+      .custom-cursor-dot,
+      .custom-cursor-ring {
+        display: none;
+      }
+    }
+
+    /* ==========================================================================
+       5. BARRA DE NAVEGAÇÃO & CONTROLES INTERATIVOS
+       ========================================================================== */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 12px 28px;
+      width: min(92%, 1100px);
+      background: rgba(11, 17, 36, 0.7);
+      backdrop-filter: blur(var(--blur-strength));
+      -webkit-backdrop-filter: blur(var(--blur-strength));
+      border: 1px solid var(--color-border);
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--color-border);
+      transition: var(--transition-smooth);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-badge-pill {
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+      border-radius: 20px;
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 10px rgba(255, 61, 129, 0.5);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      list-style: none;
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      font-weight: 500;
+      position: relative;
+      padding: 6px 10px;
+      transition: color 0.3s;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: #fff;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+      transition: width 0.3s ease, left 0.3s ease;
+    }
+
+    .nav-link:hover::after,
+    .nav-link.active::after {
+      width: 80%;
+      left: 10%;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: var(--transition-smooth);
+    }
+
+    .ctrl-btn:hover {
+      background: var(--primary);
+      color: #050814;
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary);
+      transform: scale(1.1);
+    }
+
+    /* Menu mobile toggle */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       6. CONTEÚDO PRINCIPAL & ESTRUTURA DE SEÇÕES (CAMADA SOBRE O 3D)
+       ========================================================================== */
+    .page-wrapper {
+      position: relative;
+      z-index: 10;
+      pointer-events: none;
+      /* Deixa cliques passarem para o 3D quando fora de elementos interativos */
+    }
+
+    .interactive-layer {
+      pointer-events: auto;
+    }
+
+    section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 100px 24px 60px;
+      position: relative;
+    }
+
+    .container {
+      width: min(92%, 1160px);
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .section-tag {
+      display: inline-block;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--primary);
+      padding: 6px 16px;
+      background: rgba(39, 225, 193, 0.1);
+      border: 1px solid var(--primary);
+      border-radius: 30px;
+      margin-bottom: 12px;
+      box-shadow: 0 0 12px rgba(39, 225, 193, 0.3);
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 25px rgba(0, 180, 255, 0.4);
+    }
+
+    .section-title span {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ==========================================================================
+       7. HERO SECTION (COM TÍTULO 3D E APRESENTAÇÃO)
+       ========================================================================== */
+    #hero {
+      text-align: center;
+      min-height: 100vh;
+      padding-top: 140px;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero-content {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--color-border);
+      padding: 8px 22px;
+      border-radius: 40px;
+      font-size: 0.95rem;
+      color: var(--neon-turquoise);
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(39, 225, 193, 0.2);
+    }
+
+    .hero-pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--neon-green);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(1.4);
+      }
+    }
+
+    /* Efeito de extrusão 3D e profundidade de texto */
+    .hero-name {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 7.5vw, 5.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      color: #FFFFFF;
+      text-shadow:
+        0 1px 0 #cccccc,
+        0 2px 0 #c9c9c9,
+        0 3px 0 #bbbbbb,
+        0 4px 0 #b6b6b6,
+        0 5px 0 #aaaaaa,
+        0 6px 1px rgba(0, 0, 0, .1),
+        0 0 10px rgba(39, 225, 193, 0.7),
+        0 0 30px rgba(255, 61, 129, 0.5),
+        0 0 60px rgba(108, 92, 231, 0.4);
+      transform: perspective(600px) rotateX(4deg);
+      transition: transform 0.4s ease;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-heading);
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: var(--neon-yellow);
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-shadow: 0 0 15px rgba(255, 180, 0, 0.5);
+    }
+
+    .hero-desc {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 36px;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Botões estilizados com brilho neon */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 34px;
+      border-radius: 40px;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      border: none;
+      transition: var(--transition-smooth);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--neon-blue));
+      color: #050814;
+      box-shadow: 0 0 25px rgba(39, 225, 193, 0.6), 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 0 40px var(--primary), 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      color: #FFFFFF;
+      border: 2px solid var(--secondary);
+      box-shadow: 0 0 20px rgba(255, 61, 129, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-outline:hover {
+      background: var(--secondary);
+      color: #FFFFFF;
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 0 40px var(--secondary);
+    }
+
+    .hero-hint {
+      margin-top: 40px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .hero-hint kbd {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-family: monospace;
+      color: #fff;
+    }
+
+    /* ==========================================================================
+       8. SOBRE MIM SECTION (CARD COM TILT 3D)
+       ========================================================================== */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .tilt-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(var(--blur-strength));
+      -webkit-backdrop-filter: blur(var(--blur-strength));
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(39, 225, 193, 0.15);
+      transform-style: preserve-3d;
+      transition: border-color 0.4s, box-shadow 0.4s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tilt-card:hover {
+      border-color: var(--color-border-glow);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 45px var(--color-border-glow);
+    }
+
+    .tilt-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+      transform: translate(var(--mouse-x, 0px), var(--mouse-y, 0px));
+    }
+
+    .tilt-inner {
+      transform: translateZ(40px);
+    }
+
+    .about-lead {
+      font-size: 1.15rem;
+      color: #fff;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .about-text {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-size: 0.98rem;
+    }
+
+    .about-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .about-badge {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 30px;
+      font-size: 0.85rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .about-badge i {
+      color: var(--primary);
+    }
+
+    .about-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .stat-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      backdrop-filter: blur(var(--blur-strength));
+      transition: var(--transition-smooth);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-8px) scale(1.03);
+      border-color: var(--secondary);
+      box-shadow: 0 10px 30px rgba(255, 61, 129, 0.3);
+    }
+
+    .stat-number {
+      font-family: var(--font-heading);
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--neon-yellow);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ==========================================================================
+       9. HABILIDADES SECTION (CUBOS E CARTÕES GIRATÓRIOS 3D)
+       ========================================================================== */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      width: 100%;
+    }
+
+    .skill-card-3d {
+      background: var(--color-bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(var(--blur-strength));
+      cursor: pointer;
+      position: relative;
+      perspective: 800px;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.4, 1), box-shadow 0.4s, border-color 0.4s;
+    }
+
+    .skill-card-3d:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 25px var(--card-color);
+      border-color: var(--card-color);
+    }
+
+    .skill-card-3d.rotating {
+      animation: flipCard 0.8s ease-in-out;
+    }
+
+    @keyframes flipCard {
+      0% {
+        transform: rotateY(0deg) scale(1);
+      }
+
+      50% {
+        transform: rotateY(180deg) scale(1.1);
+      }
+
+      100% {
+        transform: rotateY(360deg) scale(1);
+      }
+    }
+
+    .skill-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .skill-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 15px var(--card-color);
+      color: var(--card-color);
+    }
+
+    .skill-level-pill {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--card-color);
+      font-family: var(--font-heading);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--card-color);
+    }
+
+    .skill-name {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .skill-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      min-height: 44px;
+    }
+
+    .skill-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .skill-progress-fill {
+      height: 100%;
+      background: var(--card-color);
+      box-shadow: 0 0 10px var(--card-color);
+      border-radius: 10px;
+      transition: width 1s ease-in-out;
+    }
+
+    .skill-hint {
+      margin-top: 10px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: right;
+      font-style: italic;
+    }
+
+    /* ==========================================================================
+       10. PROJETOS SECTION (CARTOES 3D COM HOVER LEVANTADO E DESTAQUE LIFERPG)
+       ========================================================================== */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+      gap: 32px;
+      width: 100%;
+    }
+
+    .project-card-3d {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 24px;
+      overflow: hidden;
+      backdrop-filter: blur(var(--blur-strength));
+      -webkit-backdrop-filter: blur(var(--blur-strength));
+      transform-style: preserve-3d;
+      perspective: 1000px;
+      transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s, border-color 0.4s;
+      position: relative;
+    }
+
+    .project-card-3d:hover {
+      transform: translateY(-12px) rotateX(4deg) scale(1.02);
+      border-color: var(--neon-turquoise);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(39, 225, 193, 0.4);
+    }
+
+    .project-banner {
+      height: 200px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0f1b38, #1c0f30);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .project-banner-canvas-preview {
+      position: absolute;
+      inset: 0;
+      opacity: 0.6;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .project-badge-featured {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 30px;
+      box-shadow: 0 0 15px rgba(255, 61, 129, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 2;
+    }
+
+    .project-icon-glamor {
+      font-size: 3.5rem;
+      z-index: 2;
+      filter: drop-shadow(0 0 20px var(--neon-yellow));
+      animation: floatSlow 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatSlow {
+      0% {
+        transform: translateY(-5px) rotate(0deg);
+      }
+
+      100% {
+        transform: translateY(5px) rotate(5deg);
+      }
+    }
+
+    .project-body {
+      padding: 30px;
+    }
+
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .project-tag {
+      font-size: 0.75rem;
+      color: var(--neon-turquoise);
+      background: rgba(39, 225, 193, 0.1);
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(39, 225, 193, 0.2);
+    }
+
+    .project-name {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .project-desc {
+      color: var(--text-muted);
+      font-size: 0.94rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .project-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-project {
+      flex: 1;
+      text-align: center;
+      justify-content: center;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+    }
+
+    /* ==========================================================================
+       11. LINHA DO TEMPO / EXPERIÊNCIA (SURGIMENTO NO EIXO Z)
+       ========================================================================== */
+    .timeline {
+      position: relative;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 20px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: linear-gradient(180deg, var(--neon-pink), var(--neon-turquoise), var(--neon-yellow));
+      transform: translateX(-50%);
+      box-shadow: 0 0 15px var(--neon-turquoise);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 50px;
+      width: 50%;
+      perspective: 600px;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+    }
+
+    .timeline-item:nth-child(odd) {
+      left: 0;
+      padding-right: 40px;
+      text-align: right;
+    }
+
+    .timeline-item:nth-child(even) {
+      left: 50%;
+      padding-left: 40px;
+      text-align: left;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      top: 24px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--neon-yellow);
+      box-shadow: 0 0 15px var(--neon-yellow);
+      border: 3px solid #050814;
+      z-index: 5;
+    }
+
+    .timeline-item:nth-child(odd) .timeline-dot {
+      right: -9px;
+    }
+
+    .timeline-item:nth-child(even) .timeline-dot {
+      left: -9px;
+    }
+
+    .timeline-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(var(--blur-strength));
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: transform 0.4s ease, border-color 0.4s;
+    }
+
+    .timeline-card:hover {
+      transform: scale(1.03) translateZ(15px);
+      border-color: var(--neon-pink);
+      box-shadow: 0 15px 40px rgba(255, 61, 129, 0.3);
+    }
+
+    .timeline-date {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--neon-turquoise);
+      margin-bottom: 6px;
+    }
+
+    .timeline-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .timeline-text {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 768px) {
+      .timeline::before {
+        left: 20px;
+      }
+
+      .timeline-item {
+        width: 100%;
+        left: 0 !important;
+        padding-left: 50px !important;
+        padding-right: 0 !important;
+        text-align: left !important;
+      }
+
+      .timeline-item .timeline-dot {
+        left: 11px !important;
+      }
+    }
+
+    /* ==========================================================================
+       12. CONTATO SECTION & FORMULÁRIO COM FEEDBACK
+       ========================================================================== */
+    .contact-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      width: 100%;
+      align-items: center;
+    }
+
+    .contact-info-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(var(--blur-strength));
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .contact-info-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .contact-info-card p {
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+
+    .social-links-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .social-link-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: var(--transition-smooth);
+    }
+
+    .social-link-btn:hover {
+      background: rgba(39, 225, 193, 0.15);
+      border-color: var(--primary);
+      transform: translateX(8px);
+      box-shadow: 0 0 20px rgba(39, 225, 193, 0.4);
+      color: var(--primary);
+    }
+
+    .social-link-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
+    .contact-form {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(var(--blur-strength));
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-family: var(--font-heading);
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      background: rgba(7, 11, 25, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      transition: var(--transition-smooth);
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(39, 225, 193, 0.3);
+      background: rgba(14, 21, 46, 0.9);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    /* Modal / Toast de Sucesso */
+    .toast-feedback {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #0f1c34;
+      border: 2px solid var(--neon-turquoise);
+      border-radius: 16px;
+      padding: 18px 26px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(39, 225, 193, 0.5);
+      z-index: 9999;
+      transform: translateY(120px);
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.4s;
+    }
+
+    .toast-feedback.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ==========================================================================
+       13. RODAPÉ (FOOTER)
+       ========================================================================== */
+    footer {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(4, 7, 18, 0.85);
+      backdrop-filter: blur(10px);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    /* ==========================================================================
+       14. RESPONSIVIDADE & AJUSTES MOBILE
+       ========================================================================== */
+    @media (max-width: 900px) {
+
+      .about-grid,
+      .contact-wrapper {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .navbar {
+        padding: 10px 20px;
+      }
+    }
+
+    /* Redução de movimento acessível */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ========================================================================
+       TELA DE CARREGAMENTO (LOADER)
+       ======================================================================== -->
+  <div id="loader">
+    <div class="loader-cube-wrap">
+      <div class="loader-cube">
+        <div class="loader-face"></div>
+        <div class="loader-face"></div>
+        <div class="loader-face"></div>
+        <div class="loader-face"></div>
+        <div class="loader-face"></div>
+        <div class="loader-face"></div>
+      </div>
+    </div>
+    <div class="loader-title">Matheus Oliveira • 3D Universe</div>
+    <div class="loader-bar-bg">
+      <div class="loader-bar-fill" id="loader-fill"></div>
+    </div>
+    <div class="loader-percent" id="loader-pct">Carregando cena 3D... 0%</div>
+  </div>
+
+  <!-- Fallback sem WebGL -->
+  <div class="no-webgl-fallback" id="webgl-fallback"></div>
+
+  <!-- Canvas 3D Three.js -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Cursor Personalizado com Brilho Neon -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-ring" id="cursor-ring"></div>
+
+  <!-- ========================================================================
+       BARRA DE NAVEGAÇÃO SUPERIOR
+       ======================================================================== -->
+  <header class="navbar interactive-layer">
+    <a href="#hero" class="nav-brand">
+      <span>Matheus</span>
+      <span class="nav-badge-pill">2º B TI</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#hero" class="nav-link active">Início</a></li>
+      <li><a href="#sobre" class="nav-link">Sobre</a></li>
+      <li><a href="#habilidades" class="nav-link">Habilidades</a></li>
+      <li><a href="#projetos" class="nav-link">Projetos</a></li>
+      <li><a href="#trajetoria" class="nav-link">Trajetória</a></li>
+      <li><a href="#contato" class="nav-link">Contato</a></li>
+    </ul>
+
+    <div class="nav-controls">
+      <!-- Botão de Paletas de Cores (Neon / Sunset / Ocean) -->
+      <button class="ctrl-btn" id="btn-theme" title="Trocar Tema de Cores (Tecla T)" aria-label="Trocar Paleta">
+        🎨
+      </button>
+
+      <!-- Botão de Efeitos Sonoros Synthesizer (Mudo por padrão) -->
+      <button class="ctrl-btn" id="btn-audio" title="Ativar Efeitos Sonoros" aria-label="Ligar Som">
+        🔇
+      </button>
+
+      <!-- Botão Pausar/Continuar Animações 3D -->
+      <button class="ctrl-btn" id="btn-pause" title="Pausar Animações 3D (Tecla P)" aria-label="Pausar Animações">
+        ⏸️
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       CONTEÚDO PRINCIPAL (SEÇÕES SOBRE O ESPAÇO 3D)
+       ======================================================================== -->
+  <main class="page-wrapper">
+
+    <!-- SEÇÃO 1: HERO -->
+    <section id="hero">
+      <div class="container hero-content interactive-layer">
+        <div class="hero-badge">
+          <span class="hero-pulse-dot"></span>
+          <span>Disponível para Projetos & Estágio • Turma 2º B TI</span>
+        </div>
+
+        <h1 class="hero-name">Matheus Oliveira de Carvalho</h1>
+
+        <div class="hero-subtitle">
+          Desenvolvedor Front-End & Criador Web 3D
+        </div>
+
+        <p class="hero-desc">
+          Construindo experiências digitais imersivas, designs futuristas e aplicações interativas com JavaScript
+          moderno, Three.js e efeitos 3D de alta performance.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="#projetos" class="btn btn-primary">
+            <span>🚀 Ver Projetos</span>
+          </a>
+          <a href="#contato" class="btn btn-outline">
+            <span>📬 Falar Comigo</span>
+          </a>
+        </div>
+
+        <div class="hero-hint">
+          <span>💡 Dica: Clique ou arraste os objetos 3D no fundo • Use as teclas <kbd>↑</kbd> <kbd>↓</kbd> <kbd>T</kbd>
+            <kbd>P</kbd></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 2: SOBRE MIM -->
+    <section id="sobre">
+      <div class="container interactive-layer">
+        <div class="section-header">
+          <span class="section-tag">Perfil & Paixão</span>
+          <h2 class="section-title">Sobre <span>Mim</span></h2>
+        </div>
+
+        <div class="about-grid">
+          <!-- Cartão 3D com Efeito Tilt ao seguir mouse -->
+          <div class="tilt-card" id="about-tilt-card">
+            <div class="tilt-inner">
+              <p class="about-lead">
+                Olá! Sou <strong>Matheus Oliveira de Carvalho</strong>, estudante da turma <strong>2º B TI</strong>,
+                apaixonado por tecnologia, games e computação gráfica na web.
+              </p>
+              <p class="about-text">
+                Dedico meus dias a aprender o que há de mais moderno em engenharia front-end. Adoro transformar linhas
+                de código em interfaces visuais vivas que reagem ao mouse, ao toque e aos movimentos de rolagem,
+                proporcionando sensações únicas de profundidade.
+              </p>
+              <p class="about-text">
+                Meu foco é desenvolver interfaces interativas, responsivas e leves que pareçam verdadeiros aplicativos
+                em 3D direto no navegador.
+              </p>
+
+              <div class="about-badges">
+                <div class="about-badge">⚡ Alta Performance 60 FPS</div>
+                <div class="about-badge">🎮 Interatividade & Física</div>
+                <div class="about-badge">🎨 Design Futurista Neon</div>
+                <div class="about-badge">📱 Totalmente Responsivo</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards de Métricas e Destaques -->
+          <div class="about-stats">
+            <div class="stat-card">
+              <div class="stat-number">2º B</div>
+              <div class="stat-label">Ensino Técnico em TI</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">100%</div>
+              <div class="stat-label">Dedicação & Criatividade</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">3D</div>
+              <div class="stat-label">Three.js & WebGL</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">60+</div>
+              <div class="stat-label">FPS Otimizado</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 3: HABILIDADES -->
+    <section id="habilidades">
+      <div class="container interactive-layer">
+        <div class="section-header">
+          <span class="section-tag">Tecnologias & Ferramentas</span>
+          <h2 class="section-title">Minhas <span>Habilidades</span></h2>
+        </div>
+
+        <div class="skills-grid">
+          <!-- Habilidade 1 -->
+          <div class="skill-card-3d" style="--card-color: var(--neon-turquoise);" onclick="animateSkillCard(this)">
+            <div class="skill-top">
+              <div class="skill-icon-wrap">🌐</div>
+              <span class="skill-level-pill">90%</span>
+            </div>
+            <h3 class="skill-name">HTML5 / CSS3 Moderno</h3>
+            <p class="skill-desc">Estruturação semântica, Flexbox, CSS Grid, 3D Transforms, animações fluidas e
+              Glassmorphism.</p>
+            <div class="skill-progress-bar">
+              <div class="skill-progress-fill" style="width: 90%;"></div>
+            </div>
+            <div class="skill-hint">Clique para girar em 3D ↻</div>
+          </div>
+
+          <!-- Habilidade 2 -->
+          <div class="skill-card-3d" style="--card-color: var(--neon-yellow);" onclick="animateSkillCard(this)">
+            <div class="skill-top">
+              <div class="skill-icon-wrap">⚡</div>
+              <span class="skill-level-pill">88%</span>
+            </div>
+            <h3 class="skill-name">JavaScript (ES6+)</h3>
+            <p class="skill-desc">Manipulação do DOM, Lógica avançada, Promises, Async/Await, Canvas API e Web Audio
+              API.</p>
+            <div class="skill-progress-bar">
+              <div class="skill-progress-fill" style="width: 88%;"></div>
+            </div>
+            <div class="skill-hint">Clique para girar em 3D ↻</div>
+          </div>
+
+          <!-- Habilidade 3 -->
+          <div class="skill-card-3d" style="--card-color: var(--neon-pink);" onclick="animateSkillCard(this)">
+            <div class="skill-top">
+              <div class="skill-icon-wrap">🧊</div>
+              <span class="skill-level-pill">85%</span>
+            </div>
+            <h3 class="skill-name">Three.js & WebGL 3D</h3>
+            <p class="skill-desc">Geometrias 3D, materiais reflexivos, partículas, sombras dinâmicas, raycasting e
+              animações de câmera.</p>
+            <div class="skill-progress-bar">
+              <div class="skill-progress-fill" style="width: 85%;"></div>
+            </div>
+            <div class="skill-hint">Clique para girar em 3D ↻</div>
+          </div>
+
+          <!-- Habilidade 4 -->
+          <div class="skill-card-3d" style="--card-color: var(--neon-purple);" onclick="animateSkillCard(this)">
+            <div class="skill-top">
+              <div class="skill-icon-wrap">🎬</div>
+              <span class="skill-level-pill">82%</span>
+            </div>
+            <h3 class="skill-name">GSAP & ScrollTrigger</h3>
+            <p class="skill-desc">Coreografias de animações sincronizadas ao scroll, transições cinematográficas e
+              timelines dinâmicas.</p>
+            <div class="skill-progress-bar">
+              <div class="skill-progress-fill" style="width: 82%;"></div>
+            </div>
+            <div class="skill-hint">Clique para girar em 3D ↻</div>
+          </div>
+
+          <!-- Habilidade 5 -->
+          <div class="skill-card-3d" style="--card-color: var(--neon-blue);" onclick="animateSkillCard(this)">
+            <div class="skill-top">
+              <div class="skill-icon-wrap">🛠️</div>
+              <span class="skill-level-pill">80%</span>
+            </div>
+            <h3 class="skill-name">Git, GitHub & Deploy</h3>
+            <p class="skill-desc">Controle de versão, ramificações, hospedagem no GitHub Pages, resolução de conflitos e
+              CI/CD básico.</p>
+            <div class="skill-progress-bar">
+              <div class="skill-progress-fill" style="width: 80%;"></div>
+            </div>
+            <div class="skill-hint">Clique para girar em 3D ↻</div>
+          </div>
+
+          <!-- Habilidade 6 -->
+          <div class="skill-card-3d" style="--card-color: var(--neon-green);" onclick="animateSkillCard(this)">
+            <div class="skill-top">
+              <div class="skill-icon-wrap">✨</div>
+              <span class="skill-level-pill">86%</span>
+            </div>
+            <h3 class="skill-name">UI/UX & Design Criativo</h3>
+            <p class="skill-desc">Prototipagem de interfaces imersivas, paletas neon, ergonomia visual e
+              microinterações.</p>
+            <div class="skill-progress-bar">
+              <div class="skill-progress-fill" style="width: 86%;"></div>
+            </div>
+            <div class="skill-hint">Clique para girar em 3D ↻</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 4: PROJETOS -->
+    <section id="projetos">
+      <div class="container interactive-layer">
+        <div class="section-header">
+          <span class="section-tag">Trabalhos Selecionados</span>
+          <h2 class="section-title">Meus <span>Projetos</span></h2>
+        </div>
+
+        <div class="projects-grid">
+          <!-- Projeto Destaque: LifeRPG (Conforme solicitado) -->
+          <div class="project-card-3d">
+            <div class="project-banner">
+              <span class="project-badge-featured">⭐ Destaque</span>
+              <div class="project-icon-glamor">⚔️</div>
+            </div>
+            <div class="project-body">
+              <div class="project-tags">
+                <span class="project-tag">HTML5 / JS</span>
+                <span class="project-tag">Game Logic</span>
+                <span class="project-tag">RPG Web</span>
+              </div>
+              <h3 class="project-name">LifeRPG - Jogo Interativo</h3>
+              <p class="project-desc">
+                Jogo de simulação e evolução em RPG construído em HTML e JavaScript puro. O jogador gerencia atributos
+                de vida, realiza ações, acumula pontos e evolui em um ambiente interativo com mecânicas dinâmicas.
+              </p>
+              <div class="project-actions">
+                <a href="https://gabriel-vequeti.github.io/teste/" target="_blank" rel="noopener noreferrer"
+                  class="btn btn-primary btn-project">
+                  <span>🎮 Abrir Projeto</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Projeto 2: CyberVibe 3D -->
+          <div class="project-card-3d">
+            <div class="project-banner">
+              <div class="project-icon-glamor">🎧</div>
+            </div>
+            <div class="project-body">
+              <div class="project-tags">
+                <span class="project-tag">Three.js</span>
+                <span class="project-tag">Web Audio API</span>
+                <span class="project-tag">Visualizer</span>
+              </div>
+              <h3 class="project-name">CyberVibe 3D Sound</h3>
+              <p class="project-desc">
+                Visualizador de áudio tridimensional com esferas pulsantes e malhas reativas à frequência sonora. As
+                partículas se expandem e mudam de cor conforme as batidas graves e agudas.
+              </p>
+              <div class="project-actions">
+                <button class="btn btn-outline btn-project"
+                  onclick="playBeep(520); alert('Projeto em exibição no ambiente local!')">
+                  <span>👁️ Ver Demonstração</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Projeto 3: NeonCore Engine -->
+          <div class="project-card-3d">
+            <div class="project-banner">
+              <div class="project-icon-glamor">🪐</div>
+            </div>
+            <div class="project-body">
+              <div class="project-tags">
+                <span class="project-tag">WebGL</span>
+                <span class="project-tag">Shaders</span>
+                <span class="project-tag">GSAP</span>
+              </div>
+              <h3 class="project-name">NeonCore 3D Engine</h3>
+              <p class="project-desc">
+                Showcase de geometrias paramétricas e partículas orbitais interativas. Inclui iluminação pontual em
+                tempo real, suporte a giroscópio de smartphone e câmera cinemática controlada por scroll.
+              </p>
+              <div class="project-actions">
+                <button class="btn btn-outline btn-project"
+                  onclick="playBeep(660); alert('Exemplo integrado na própria cena de fundo!')">
+                  <span>🚀 Explorar Cena</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 5: LINHA DO TEMPO / TRAJETÓRIA -->
+    <section id="trajetoria">
+      <div class="container interactive-layer">
+        <div class="section-header">
+          <span class="section-tag">Histórico de Aprendizado</span>
+          <h2 class="section-title">Minha <span>Trajetória</span></h2>
+        </div>
+
+        <div class="timeline">
+          <!-- Item 1 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="timeline-date">2024 - 2025 (Atual)</div>
+              <h3 class="timeline-title">2º Ano B - Ensino Técnico em TI</h3>
+              <p class="timeline-text">
+                Aprofundamento em desenvolvimento web, estruturas de dados, banco de dados, lógica de programação e
+                arquitetura de sistemas com foco em projetos práticos.
+              </p>
+            </div>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="timeline-date">2024</div>
+              <h3 class="timeline-title">Criação do Jogo LifeRPG</h3>
+              <p class="timeline-text">
+                Concepção, arquitetura de lógica em JavaScript e implementação do sistema do jogo de RPG, explorando
+                gerenciamento de estado e interatividade.
+              </p>
+            </div>
+          </div>
+
+          <!-- Item 3 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="timeline-date">2025</div>
+              <h3 class="timeline-title">Especialização em Three.js & Web 3D</h3>
+              <p class="timeline-text">
+                Estudo de computação gráfica na web, shaders, manipulação de matrizes, física e integração de animações
+                GSAP com WebGL.
+              </p>
+            </div>
+          </div>
+
+          <!-- Item 4 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-card">
+              <div class="timeline-date">Próximos Passos</div>
+              <h3 class="timeline-title">Engenharia Front-End & Inovação</h3>
+              <p class="timeline-text">
+                Desenvolver aplicações completas, portfólios premiados no Awwwards e ingressar no mercado de tecnologia
+                e desenvolvimento de software.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 6: CONTATO -->
+    <section id="contato">
+      <div class="container interactive-layer">
+        <div class="section-header">
+          <span class="section-tag">Conecte-se</span>
+          <h2 class="section-title">Entre em <span>Contato</span></h2>
+        </div>
+
+        <div class="contact-wrapper">
+          <!-- Cartão de Contatos e Redes -->
+          <div class="contact-info-card">
+            <h3>Vamos criar algo incrível juntos?</h3>
+            <p>
+              Estou sempre aberto a novas ideias, oportunidades de estágio, projetos colaborativos e conversas sobre
+              desenvolvimento web e tecnologias 3D.
+            </p>
+
+            <div class="social-links-grid">
+              <!-- E-mail -->
+              <a href="mailto:matheus.carvalho@email.com" class="social-link-btn" id="link-email">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                </svg>
+                <span>matheus.carvalho@email.com</span>
+              </a>
+
+              <!-- GitHub -->
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="social-link-btn">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" />
+                </svg>
+                <span>github.com/matheus-carvalho</span>
+              </a>
+
+              <!-- LinkedIn -->
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="social-link-btn">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                </svg>
+                <span>linkedin.com/in/matheus-carvalho</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Formulário Interativo -->
+          <form class="contact-form" id="contact-form" onsubmit="handleFormSubmit(event)">
+            <div class="form-group">
+              <label class="form-label" for="form-name">Seu Nome</label>
+              <input type="text" id="form-name" class="form-input" placeholder="Ex: Gabriel Vequeti" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="form-email">Seu E-mail</label>
+              <input type="email" id="form-email" class="form-input" placeholder="seuemail@exemplo.com" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="form-message">Sua Mensagem</label>
+              <textarea id="form-message" class="form-textarea"
+                placeholder="Olá Matheus, gostei do seu portfólio 3D e gostaria de..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+              <span>✉️ Enviar Mensagem</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Rodapé -->
+  <footer>
+    <div class="container">
+      <p>© 2025 Matheus Oliveira de Carvalho • Turma 2º B TI • Todos os direitos reservados.</p>
+      <p style="margin-top: 6px; font-size: 0.8rem;">
+        Feito com Three.js, GSAP e criatividade 3D. Inspirado nas melhores experiências WebGL do mundo.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Toast de Sucesso ao Enviar Mensagem -->
+  <div class="toast-feedback" id="toast-message">
+    <div style="font-size: 1.6rem;">🎉</div>
+    <div>
+      <div style="font-weight: 700; color: var(--neon-turquoise);">Mensagem enviada com sucesso!</div>
+      <div style="font-size: 0.85rem; color: #ccc;">Obrigado pelo contato, Matheus responderá em breve.</div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       SCRIPTS: THREE.JS ENGINE 3D, GSAP, ÁUDIO E INTERATIVIDADE COMPLETA
+       ======================================================================== -->
+  <script>
+    /* ==========================================================================
+       CONFIGURAÇÃO DE ÁUDIO PROCEDURAL (SYNTHESIZER WEB AUDIO API)
+       Sem necessidade de arquivos de som externos - gera tons futuristas limpos!
+       ========================================================================== */
+    let audioCtx = null;
+    let audioEnabled = false;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBeep(freq = 440, type = 'sine', duration = 0.15) {
+      if (!audioEnabled || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.warn("Audio play error", e);
+      }
+    }
+
+    // Toggle de Áudio
+    const btnAudio = document.getElementById('btn-audio');
+    btnAudio.addEventListener('click', () => {
+      initAudioContext();
+      audioEnabled = !audioEnabled;
+      btnAudio.innerHTML = audioEnabled ? '🔊' : '🔇';
+      btnAudio.style.borderColor = audioEnabled ? 'var(--neon-turquoise)' : 'rgba(255,255,255,0.15)';
+      if (audioEnabled) {
+        playBeep(600, 'sine', 0.2);
+      }
+    });
+
+    /* ==========================================================================
+       TEMAS DE CORES DINÂMICOS (NEON / SUNSET / OCEAN)
+       Alterna luzes do Three.js, materiais e variáveis CSS
+       ========================================================================== */
+    const themes = [
+      {
+        id: 'neon',
+        name: 'Neon Cyber',
+        bg: 0x070b19,
+        lights: [0x27E1C1, 0xFF3D81, 0xFFB400, 0x6C5CE7],
+        bodyClass: ''
+      },
+      {
+        id: 'sunset',
+        name: 'Sunset Glow',
+        bg: 0x14091a,
+        lights: [0xFF5E36, 0xFF2A85, 0xFFAE33, 0x9b51e0],
+        bodyClass: 'theme-sunset'
+      },
+      {
+        id: 'ocean',
+        name: 'Ocean Depths',
+        bg: 0x031326,
+        lights: [0x00F2FE, 0x4FACFE, 0x38EF7D, 0x0072FF],
+        bodyClass: 'theme-ocean'
+      }
+    ];
+
+    let currentThemeIndex = 0;
+    const btnTheme = document.getElementById('btn-theme');
+
+    function applyTheme(index) {
+      currentThemeIndex = index % themes.length;
+      const theme = themes[currentThemeIndex];
+
+      // Atualiza classe do body
+      document.body.className = theme.bodyClass;
+
+      // Atualiza Three.js background, neblina e luzes
+      if (scene) {
+        scene.background = new THREE.Color(theme.bg);
+        if (scene.fog) scene.fog.color = new THREE.Color(theme.bg);
+
+        pointLights.forEach((light, i) => {
+          if (theme.lights[i]) {
+            light.color.setHex(theme.lights[i]);
+          }
+        });
+
+        // Atualiza cor do núcleo central
+        if (centralMesh && centralMesh.material) {
+          centralMesh.material.color.setHex(theme.lights[0]);
+        }
+      }
+
+      playBeep(750, 'triangle', 0.15);
+    }
+
+    btnTheme.addEventListener('click', () => {
+      applyTheme(currentThemeIndex + 1);
+    });
+
+    /* ==========================================================================
+       PAUSAR / CONTINUAR ANIMAÇÕES 3D
+       ========================================================================== */
+    let is3DPaused = false;
+    const btnPause = document.getElementById('btn-pause');
+
+    function togglePause() {
+      is3DPaused = !is3DPaused;
+      btnPause.innerHTML = is3DPaused ? '▶️' : '⏸️';
+      playBeep(is3DPaused ? 350 : 700, 'sine', 0.1);
+    }
+
+    btnPause.addEventListener('click', togglePause);
+
+    /* ==========================================================================
+       CONTROLES DE TECLADO (Atalhos: Setas, T para Tema, P para Pausar)
+       ========================================================================== */
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 't' || e.key === 'T') {
+        applyTheme(currentThemeIndex + 1);
+      } else if (e.key === 'p' || e.key === 'P') {
+        togglePause();
+      } else if (e.key === 'ArrowDown') {
+        navigateSection(1);
+      } else if (e.key === 'ArrowUp') {
+        navigateSection(-1);
+      }
+    });
+
+    const sectionIds = ['hero', 'sobre', 'habilidades', 'projetos', 'trajetoria', 'contato'];
+    function navigateSection(direction) {
+      let currentIdx = 0;
+      const scrollPos = window.scrollY + 200;
+      sectionIds.forEach((id, idx) => {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollPos) currentIdx = idx;
+      });
+      const nextIdx = Math.max(0, Math.min(sectionIds.length - 1, currentIdx + direction));
+      const targetEl = document.getElementById(sectionIds[nextIdx]);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+        playBeep(500 + nextIdx * 60, 'sine', 0.08);
+      }
+    }
+
+    /* ==========================================================================
+       CURSOR PERSONALIZADO
+       ========================================================================== */
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let ringX = mouseX;
+    let ringY = mouseY;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (cursorDot) {
+        cursorDot.style.left = `${mouseX}px`;
+        cursorDot.style.top = `${mouseY}px`;
+      }
+    });
+
+    function updateCursorRing() {
+      ringX += (mouseX - ringX) * 0.18;
+      ringY += (mouseY - ringY) * 0.18;
+      if (cursorRing) {
+        cursorRing.style.left = `${ringX}px`;
+        cursorRing.style.top = `${ringY}px`;
+      }
+      requestAnimationFrame(updateCursorRing);
+    }
+    updateCursorRing();
+
+    // Hover em links e botões
+    const interactiveElements = document.querySelectorAll('a, button, input, textarea, .skill-card-3d, .project-card-3d');
+    interactiveElements.forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        document.body.classList.add('cursor-hover');
+      });
+      el.addEventListener('mouseleave', () => {
+        document.body.classList.remove('cursor-hover');
+      });
+    });
+
+    /* ==========================================================================
+       ANIMAÇÃO DE CARDS DE HABILIDADE (GIRAR 360º NO CLIQUE)
+       ========================================================================== */
+    function animateSkillCard(card) {
+      if (card.classList.contains('rotating')) return;
+      card.classList.add('rotating');
+      playBeep(880, 'triangle', 0.25);
+
+      // Spawna partículas 3D no centro da tela ao clicar
+      spawnClickParticles(0, 0, 0);
+
+      setTimeout(() => {
+        card.classList.remove('rotating');
+      }, 800);
+    }
+
+    /* ==========================================================================
+       TILT 3D NO CARD "SOBRE MIM"
+       ========================================================================== */
+    const tiltCard = document.getElementById('about-tilt-card');
+    if (tiltCard) {
+      tiltCard.addEventListener('mousemove', (e) => {
+        const rect = tiltCard.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -12;
+        const rotateY = ((x - centerX) / centerX) * 12;
+
+        tiltCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+        tiltCard.style.setProperty('--mouse-x', `${x}px`);
+        tiltCard.style.setProperty('--mouse-y', `${y}px`);
+      });
+
+      tiltCard.addEventListener('mouseleave', () => {
+        tiltCard.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+      });
+    }
+
+    /* ==========================================================================
+       FORMULÁRIO DE CONTATO & FEEDBACK
+       ========================================================================== */
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      playBeep(980, 'sine', 0.3);
+
+      const toast = document.getElementById('toast-message');
+      toast.classList.add('show');
+
+      const form = document.getElementById('contact-form');
+      form.reset();
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 5000);
+    }
+
+    /* ==========================================================================
+       CENA 3D THREE.JS: MOTOR COMPLETO DE ALTA PERFORMANCE
+       ========================================================================== */
+    let scene, camera, renderer;
+    let floatingObjects = [];
+    let pointLights = [];
+    let centralGroup, centralMesh, centralWireframe, centralCore;
+    let particleSystem;
+    let gridHelper;
+    let raycaster, mouseNorm;
+    let isDragging = false;
+    let prevMousePos = { x: 0, y: 0 };
+    let dragVelocity = { x: 0, y: 0 };
+
+    function initThree() {
+      const canvas = document.getElementById('webgl-canvas');
+
+      // 1. Cena
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x070b19);
+      scene.fog = new THREE.FogExp2(0x070b19, 0.035);
+
+      // 2. Câmera
+      camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 14);
+
+      // 3. Renderizador WebGL
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas: canvas,
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance"
+        });
+      } catch (err) {
+        console.error("WebGL não disponível, usando fallback em CSS", err);
+        document.getElementById('webgl-fallback').style.display = 'block';
+        return;
+      }
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+
+      // 4. Luzes Coloridas Neon
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const lightColors = [0x27E1C1, 0xFF3D81, 0xFFB400, 0x6C5CE7];
+      const lightPositions = [
+        [8, 6, 4],
+        [-8, -5, 6],
+        [0, 8, -4],
+        [-6, 6, -6]
+      ];
+
+      lightColors.forEach((col, i) => {
+        const pLight = new THREE.PointLight(col, 2.5, 30);
+        pLight.position.set(...lightPositions[i]);
+        scene.add(pLight);
+        pointLights.push(pLight);
+
+        // Pequena esfera brilhante representando a fonte de luz
+        const lightSphere = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 16, 16),
+          new THREE.MeshBasicMaterial({ color: col })
+        );
+        pLight.add(lightSphere);
+      });
+
+      // 5. Piso em Grade com Perspectiva Neon
+      const grid = new THREE.GridHelper(60, 40, 0x27E1C1, 0x162a55);
+      grid.position.y = -6;
+      grid.material.opacity = 0.35;
+      grid.material.transparent = true;
+      scene.add(grid);
+      gridHelper = grid;
+
+      // 6. Campo de Partículas Coloridas Flutuantes
+      const particleCount = 700;
+      const particleGeo = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+
+      const paletteRGB = [
+        new THREE.Color(0xFF3D81),
+        new THREE.Color(0xFFB400),
+        new THREE.Color(0x27E1C1),
+        new THREE.Color(0x6C5CE7),
+        new THREE.Color(0x00B4FF)
+      ];
+
+      for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 45;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 35;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+
+        const c = paletteRGB[Math.floor(Math.random() * paletteRGB.length)];
+        colors[i * 3] = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      // Textura circular gerada proceduralmente
+      const canvasTex = document.createElement('canvas');
+      canvasTex.width = 32;
+      canvasTex.height = 32;
+      const ctx = canvasTex.getContext('2d');
+      const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 32, 32);
+      const pTexture = new THREE.CanvasTexture(canvasTex);
+
+      const particleMat = new THREE.PointsMaterial({
+        size: 0.28,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        map: pTexture,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+
+      particleSystem = new THREE.Points(particleGeo, particleMat);
+      scene.add(particleSystem);
+
+      // 7. Objeto Central de Destaque: Núcleo 3D "Matheus Oliveira"
+      centralGroup = new THREE.Group();
+      centralGroup.position.set(0, 0.5, 0);
+
+      // Geometria de Icosaedro brilhante
+      const coreGeo = new THREE.IcosahedronGeometry(1.8, 1);
+      const coreMat = new THREE.MeshPhysicalMaterial({
+        color: 0x27E1C1,
+        emissive: 0x0c3836,
+        roughness: 0.1,
+        metalness: 0.85,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        wireframe: false
+      });
+      centralMesh = new THREE.Mesh(coreGeo, coreMat);
+      centralGroup.add(centralMesh);
+
+      // Gaiola Wireframe ao redor
+      const cageGeo = new THREE.IcosahedronGeometry(2.4, 1);
+      const cageMat = new THREE.MeshBasicMaterial({
+        color: 0xFF3D81,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.4
+      });
+      centralWireframe = new THREE.Mesh(cageGeo, cageMat);
+      centralGroup.add(centralWireframe);
+
+      // Núcleo de energia interno pulsante
+      const innerCoreGeo = new THREE.SphereGeometry(0.8, 24, 24);
+      const innerCoreMat = new THREE.MeshBasicMaterial({
+        color: 0xFFB400,
+        wireframe: false
+      });
+      centralCore = new THREE.Mesh(innerCoreGeo, innerCoreMat);
+      centralGroup.add(centralCore);
+
+      // Anel Orbital girando ao redor
+      const ringGeo = new THREE.TorusGeometry(3.2, 0.05, 16, 100);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00B4FF,
+        transparent: true,
+        opacity: 0.6
+      });
+      const orbitalRing = new THREE.Mesh(ringGeo, ringMat);
+      orbitalRing.rotation.x = Math.PI / 3;
+      centralGroup.add(orbitalRing);
+
+      scene.add(centralGroup);
+
+      // 8. Formas Geométricas Flutuantes Adicionais (Cubos, Toros, Esferas, Pirâmides)
+      const geometries = [
+        new THREE.BoxGeometry(1.2, 1.2, 1.2),
+        new THREE.TorusGeometry(0.9, 0.35, 16, 40),
+        new THREE.OctahedronGeometry(1.1),
+        new THREE.DodecahedronGeometry(1.0),
+        new THREE.TorusKnotGeometry(0.7, 0.25, 64, 16),
+        new THREE.SphereGeometry(0.9, 24, 24)
+      ];
+
+      const colorsPalette = [0xFF3D81, 0xFFB400, 0x27E1C1, 0x6C5CE7, 0x00B4FF, 0x8AFF4D];
+
+      for (let i = 0; i < 16; i++) {
+        const geo = geometries[i % geometries.length];
+        const col = colorsPalette[i % colorsPalette.length];
+
+        const mat = new THREE.MeshStandardMaterial({
+          color: col,
+          roughness: 0.25,
+          metalness: 0.75,
+          wireframe: (i % 3 === 0)
+        });
+
+        const mesh = new THREE.Mesh(geo, mat);
+
+        // Posição orbital aleatória mas agradável
+        const radius = 6 + Math.random() * 8;
+        const angle = (i / 16) * Math.PI * 2;
+        mesh.position.x = Math.cos(angle) * radius + (Math.random() - 0.5) * 3;
+        mesh.position.y = (Math.random() - 0.5) * 12;
+        mesh.position.z = Math.sin(angle) * radius + (Math.random() - 0.5) * 4;
+
+        mesh.userData = {
+          rotSpeedX: (Math.random() - 0.5) * 0.02,
+          rotSpeedY: (Math.random() - 0.5) * 0.02,
+          initialY: mesh.position.y,
+          floatSpeed: 0.8 + Math.random() * 1.5,
+          floatOffset: Math.random() * Math.PI * 2,
+          colorIndex: i % colorsPalette.length
+        };
+
+        scene.add(mesh);
+        floatingObjects.push(mesh);
+      }
+
+      // 9. Raycasting para Interação de Clique nos Objetos 3D
+      raycaster = new THREE.Raycaster();
+      mouseNorm = new THREE.Vector2(-999, -999);
+
+      // 10. Listeners de Redimensionamento, Mouse, Toque e Scroll
+      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('mousemove', onMouseMoveParallax);
+      window.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('scroll', onScrollCamera);
+
+      // Dispara o carregamento suave
+      simulateLoading();
+    }
+
+    /* Redimensionamento Responsivo */
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    /* Parallax Suave com o Mouse */
+    let targetCameraX = 0;
+    let targetCameraY = 0;
+
+    function onMouseMoveParallax(e) {
+      mouseNorm.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseNorm.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      targetCameraX = mouseNorm.x * 1.8;
+      targetCameraY = mouseNorm.y * 1.2;
+    }
+
+    /* Câmera Guiada pelo Scroll */
+    let targetCameraZ = 14;
+    let targetCameraRotY = 0;
+
+    function onScrollCamera() {
+      const scrollY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = Math.min(Math.max(scrollY / (maxScroll || 1), 0), 1);
+
+      // A câmera avança e faz um passeio suave pela cena 3D
+      targetCameraZ = 14 - progress * 10;
+      targetCameraRotY = progress * Math.PI * 0.6;
+    }
+
+    /* Arrastar para Rotacionar o Objeto Central com Inércia */
+    function onPointerDown(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('.interactive-layer a') || e.target.closest('.interactive-layer button')) {
+        return;
+      }
+      isDragging = true;
+      prevMousePos = { x: e.clientX, y: e.clientY };
+
+      // Checa clique direto em objeto 3D
+      checkRaycastClick(e);
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      const deltaX = e.clientX - prevMousePos.x;
+      const deltaY = e.clientY - prevMousePos.y;
+
+      dragVelocity.x = deltaX * 0.006;
+      dragVelocity.y = deltaY * 0.006;
+
+      if (centralGroup) {
+        centralGroup.rotation.y += dragVelocity.x;
+        centralGroup.rotation.x += dragVelocity.y;
+      }
+
+      prevMousePos = { x: e.clientX, y: e.clientY };
+    }
+
+    function onPointerUp() {
+      isDragging = false;
+    }
+
+    /* Raycasting ao Clicar: Pula, Muda de Cor e Solta Partículas */
+    function checkRaycastClick(e) {
+      if (!raycaster || !camera) return;
+
+      const clickCoords = new THREE.Vector2(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -(e.clientY / window.innerHeight) * 2 + 1
+      );
+
+      raycaster.setFromCamera(clickCoords, camera);
+
+      const targets = [...floatingObjects, centralMesh, centralWireframe];
+      const intersects = raycaster.intersectObjects(targets, false);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        playBeep(720, 'square', 0.2);
+
+        // Se for o objeto central
+        if (hit === centralMesh || hit === centralWireframe) {
+          gsap.to(centralGroup.scale, {
+            x: 1.35, y: 1.35, z: 1.35,
+            duration: 0.25,
+            yoyo: true,
+            repeat: 1,
+            ease: "back.out(2)"
+          });
+          spawnClickParticles(0, 0.5, 0);
+          return;
+        }
+
+        // Animação GSAP no objeto clicado: Salto + Rotação
+        gsap.to(hit.scale, {
+          x: 1.6, y: 1.6, z: 1.6,
+          duration: 0.25,
+          yoyo: true,
+          repeat: 1,
+          ease: "elastic.out(1, 0.3)"
+        });
+
+        // Alterna cor para outra da paleta neon
+        const palette = [0xFF3D81, 0xFFB400, 0x27E1C1, 0x6C5CE7, 0x00B4FF, 0x8AFF4D];
+        const nextColor = palette[Math.floor(Math.random() * palette.length)];
+        if (hit.material && hit.material.color) {
+          hit.material.color.setHex(nextColor);
+        }
+
+        // Spawna partículas de explosão
+        spawnClickParticles(hit.position.x, hit.position.y, hit.position.z);
+      }
+    }
+
+    /* Explosão de Partículas ao Clicar em Qualquer Forma 3D */
+    const burstParticles = [];
+    function spawnClickParticles(x, y, z) {
+      const count = 35;
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+
+      const mat = new THREE.MeshBasicMaterial({ color: 0xFFB400 });
+      const geo = new THREE.SphereGeometry(0.08, 8, 8);
+
+      for (let i = 0; i < count; i++) {
+        const p = new THREE.Mesh(geo, mat);
+        p.userData = {
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          vz: (Math.random() - 0.5) * 0.25,
+          life: 1.0
+        };
+        group.add(p);
+      }
+
+      scene.add(group);
+      burstParticles.push(group);
+
+      // Limpa após 1 segundo
+      setTimeout(() => {
+        scene.remove(group);
+        const idx = burstParticles.indexOf(group);
+        if (idx !== -1) burstParticles.splice(idx, 1);
+      }, 1000);
+    }
+
+    /* ==========================================================================
+       LOOP PRINCIPAL DE ANIMAÇÃO (60 FPS + OTIMIZAÇÃO EM SEGUNDO PLANO)
+       ========================================================================== */
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Se a aba estiver oculta ou o usuário pausou, economiza GPU
+      if (document.hidden || is3DPaused) return;
+
+      const elapsed = clock.getElapsedTime();
+
+      // 1. Câmera: Interpolação suave (Lerp) para Parallax do Mouse e Scroll
+      camera.position.x += (targetCameraX - camera.position.x) * 0.05;
+      camera.position.y += (targetCameraY - camera.position.y) * 0.05;
+      camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
+      camera.rotation.y += (targetCameraRotY - camera.rotation.y) * 0.04;
+
+      // 2. Núcleo Central: Rotação contínua + Inércia do arrasto
+      if (centralGroup) {
+        if (!isDragging) {
+          dragVelocity.x *= 0.94;
+          dragVelocity.y *= 0.94;
+          centralGroup.rotation.y += dragVelocity.x + 0.005;
+          centralGroup.rotation.x += dragVelocity.y + 0.002;
+        }
+
+        // Pulso de respiração no núcleo interno
+        if (centralCore) {
+          const s = 1.0 + Math.sin(elapsed * 3) * 0.15;
+          centralCore.scale.set(s, s, s);
+        }
+
+        // Rotação contrária da gaiola externa
+        if (centralWireframe) {
+          centralWireframe.rotation.y -= 0.008;
+          centralWireframe.rotation.z += 0.004;
+        }
+      }
+
+      // 3. Formas Flutuantes: Rotação e Movimento de Flutuação Senoidal
+      floatingObjects.forEach((obj) => {
+        obj.rotation.x += obj.userData.rotSpeedX;
+        obj.rotation.y += obj.userData.rotSpeedY;
+        obj.position.y = obj.userData.initialY + Math.sin(elapsed * obj.userData.floatSpeed + obj.userData.floatOffset) * 0.8;
+      });
+
+      // 4. Partículas de Explosão ao Clicar
+      burstParticles.forEach((grp) => {
+        grp.children.forEach((p) => {
+          p.position.x += p.userData.vx;
+          p.position.y += p.userData.vy;
+          p.position.z += p.userData.vz;
+          p.userData.life -= 0.025;
+          p.scale.setScalar(Math.max(0.01, p.userData.life));
+        });
+      });
+
+      // 5. Partículas do Fundo: Giro suave
+      if (particleSystem) {
+        particleSystem.rotation.y = elapsed * 0.02;
+        particleSystem.rotation.x = Math.sin(elapsed * 0.01) * 0.1;
+      }
+
+      // 6. Luzes Orbitais: Movimento suave
+      if (pointLights.length >= 4) {
+        pointLights[0].position.x = Math.sin(elapsed * 0.8) * 9;
+        pointLights[0].position.z = Math.cos(elapsed * 0.8) * 9;
+
+        pointLights[1].position.y = Math.cos(elapsed * 0.7) * 7;
+        pointLights[1].position.x = -Math.sin(elapsed * 0.7) * 8;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* ==========================================================================
+       TELA DE CARREGAMENTO ANIMADA
+       ========================================================================== */
+    function simulateLoading() {
+      const loader = document.getElementById('loader');
+      const fill = document.getElementById('loader-fill');
+      const pct = document.getElementById('loader-pct');
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 15) + 5;
+        if (progress > 100) progress = 100;
+
+        fill.style.width = `${progress}%`;
+        pct.innerText = `Carregando cena 3D... ${progress}%`;
+
+        if (progress === 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            loader.classList.add('hidden');
+            // Animação de entrada dos títulos com GSAP
+            if (window.gsap) {
+              gsap.from('.hero-name', { duration: 1.2, y: 60, opacity: 0, ease: 'power4.out', delay: 0.2 });
+              gsap.from('.hero-subtitle', { duration: 1, y: 30, opacity: 0, ease: 'power3.out', delay: 0.4 });
+              gsap.from('.hero-cta-group', { duration: 0.8, y: 30, opacity: 0, ease: 'back.out(1.7)', delay: 0.6 });
+            }
+          }, 400);
+        }
+      }, 70);
+    }
+
+    // Inicialização ao carregar a página
+    window.addEventListener('DOMContentLoaded', () => {
+      initThree();
+      animate();
+    });
+  </script>
+</body>
+
+</html>
